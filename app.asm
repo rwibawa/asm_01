@@ -1,9 +1,9 @@
 SECTION .data
-  hello: db "Hello World!", 10  ;string to print
-  helloLen: equ $-hello         ;Length of string
+  hello: db "Hello World!", 10  ; string to print, 10=cr
+  helloLen: equ $-hello         ; Length of string
 
 SECTION .text
-  global _start       ;entry point for Linker
+  global _start       ; entry point for Linker
 
   _start:
     mov   rax,1         ; sys_write
