@@ -28,4 +28,8 @@ section .text
 $ nasm -felf64 app.asm
 $ ld app.o -o app
 $ ./app
+
+$ nasm -f elf -l hello.lst hello.asm
+$ gcc -o hello hello.o
+$ ./hello
 ```

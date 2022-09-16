@@ -1,9 +1,8 @@
-section .data
+SECTION .data
   hello: db "Hello World!", 10  ;string to print
   helloLen: equ $-hello         ;Length of string
-  "Hi Mom!"
 
-section .text
+SECTION .text
   global _start       ;entry point for Linker
 
   _start:
