@@ -86,11 +86,13 @@ ld –o program program.o
 
 Linking when an external C library is to be used:
 ```sh
-ld –-dynamic-linker /lib/ld-linux.so.2 –lc –o program program.o
+ld --dynamic-linker /lib/ld-linux.so.2 -lc -o program program.o
 ```
 
 ## 4. `gas` - GNU Assembler
 GAS, the GNU Assembler, is the default assembler for the GNU Operating System. It works on many different architectures and supports several assembly language syntaxes.
+
+* [gas examples](https://cs.lmu.edu/~ray/notes/gasexamples/)
 
 Assembling with `gcc`:
 ```sh
@@ -139,6 +141,28 @@ $ ll
 -rw-r--r-- 1 ryan ryan  955 Sep 16 16:34 hello.asm
 -rw-r--r-- 1 ryan ryan 1968 Sep 16 16:38 hello.lst
 -rw-r--r-- 1 ryan ryan  640 Sep 16 16:38 hello.o
+```
+
+### Working with the C Library
+Find the path of the dynamic linker:
+```sh
+$ gcc -v hello_world.c |& grep 'collect2' | tr ' ' '\n'
+```
+You might also need `-lgcc` and `-lgcc_s`.
+
+Assembling with `as` and link with `ld`:
+```sh
+$ as -o hola.o hola.s
+$ ld -dynamic-linker \
+/lib64/ld-linux-x86-64.so.2 \
+/usr/lib/x86_64-linux-gnu/crt1.o \
+/usr/lib/x86_64-linux-gnu/crti.o \
+-lc hola.o \
+/usr/lib/x86_64-linux-gnu/crtn.o \
+-o hola
+
+$ ./hola
+Hola, mundo
 ```
 
 ## assembler syntaxes:
