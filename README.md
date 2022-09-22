@@ -92,7 +92,9 @@ ld --dynamic-linker /lib/ld-linux.so.2 -lc -o program program.o
 ## 4. `gas` - GNU Assembler
 GAS, the GNU Assembler, is the default assembler for the GNU Operating System. It works on many different architectures and supports several assembly language syntaxes.
 
+* [GAS Syntax](https://en.wikibooks.org/wiki/X86_Assembly/GNU_assembly_syntax)
 * [gas examples](https://cs.lmu.edu/~ray/notes/gasexamples/)
+* [GNU GAS documentation](https://sourceware.org/binutils/docs/as/)
 
 Assembling with `gcc`:
 ```sh
@@ -170,9 +172,103 @@ $ ld -dynamic-linker \
 /lib64/ld-linux-x86-64.so.2 \
 /usr/lib/x86_64-linux-gnu/crt1.o \
 /usr/lib/x86_64-linux-gnu/crti.o \
--lc fib.o \
 /usr/lib/x86_64-linux-gnu/crtn.o \
--o fib
+-lc -o fib fib.o
+
+# Fibonacci 32-bit version
+$ as --32 -o fib32.o fib32.s
+
+$ ./fib
+                   0
+                   1
+                   1
+                   2
+                   3
+                   5
+                   8
+                  13
+                  21
+                  34
+                  55
+                  89
+                 144
+                 233
+                 377
+                 610
+                 987
+                1597
+                2584
+                4181
+                6765
+               10946
+               17711
+               28657
+               46368
+               75025
+              121393
+              196418
+              317811
+              514229
+              832040
+             1346269
+             2178309
+             3524578
+             5702887
+             9227465
+            14930352
+            24157817
+            39088169
+            63245986
+           102334155
+           165580141
+           267914296
+           433494437
+           701408733
+          1134903170
+          1836311903
+          2971215073
+          4807526976
+          7778742049
+         12586269025
+         20365011074
+         32951280099
+         53316291173
+         86267571272
+        139583862445
+        225851433717
+        365435296162
+        591286729879
+        956722026041
+       1548008755920
+       2504730781961
+       4052739537881
+       6557470319842
+      10610209857723
+      17167680177565
+      27777890035288
+      44945570212853
+      72723460248141
+     117669030460994
+     190392490709135
+     308061521170129
+     498454011879264
+     806515533049393
+    1304969544928657
+    2111485077978050
+    3416454622906707
+    5527939700884757
+    8944394323791464
+   14472334024676221
+   23416728348467685
+   37889062373143906
+   61305790721611591
+   99194853094755497
+  160500643816367088
+  259695496911122585
+  420196140727489673
+  679891637638612258
+ 1100087778366101931
+ 1779979416004714189
 ```
 
 ### Mixing C and Assembly Language
@@ -189,8 +285,35 @@ $ ./maxofthree
 6
 ```
 
+### Command Line Arguments
+
+You know that in C, main is just a plain old function, and it has a couple parameters of its own:
+
+    int main(int argc, char** argv)
+
+Here is a program that uses this fact to simply echo the commandline arguments to a program, one per line:
+
+```sh
+$ gcc -o echo echo.s 
+
+$ ./echo 23568 dog huh $$
+./echo
+23568
+dog
+huh
+10088
+
+$ ./echo 23568 dog huh '$$'
+./echo
+23568
+dog
+huh
+$$
+```
+
 ## Calling Conventions for 64-bit C Code
 
+* [X86 Disassembly/Calling Conventions](https://en.wikibooks.org/wiki/X86_Disassembly/Calling_Conventions)
 * [AMD64 ABI Reference](docs/abi.pdf)
 * [System V ABI - gitlab](https://gitlab.com/x86-psABIs/x86-64-ABI)
 
@@ -206,6 +329,19 @@ The most important points are (again, for 64-bit Linux, not Windows):
 * The callee is also supposed to save the control bits of the **XMCSR** and the _x87 control word_, but x87 instructions are rare in 64-bit code so you probably don't have to worry about this.
 * Integers are returned in `rax` or `rdx:rax`, and floating point values are returned in `xmm0` or `xmm1:xmm0`.
 
+## Operation Suffixes
+GAS assembly instructions are generally suffixed with the letters "b", "s", "w", "l", "q" or "t" to determine what size operand is being manipulated.
+
+* `b` = byte (8 bit).
+* `s` = single (32-bit floating point).
+* `w` = word (16 bit).
+* `l` = long (32 bit integer or 64-bit floating point).
+* `q` = quad (64 bit).
+* `t` = ten bytes (80-bit floating point).
+
+If the suffix is not specified, and there are no memory operands for the instruction, GAS infers the operand size from the size of the destination register operand (the final operand).
+
+Of course, all general-purpose registers are 64 bits wide. The old ones we already knew are easy to recognize in their 64-bit form: `rax`, `rbx`, `rcx`, `rdx`, `rsi`, `rdi`, `rbp`, `rsp` (and `rip` if we want to count the instruction pointer). These old registers can still be accessed in their smaller bit ranges, for instance: `rax`, `eax`, `ax`, `ah`, `al`. The new registers go from r8 to r15, and can be accessed in their various bit ranges like this: `r8` (qword), `r8d` (dword), `r8w` (word), `r8b` (low byte).
 
 ## assembler syntaxes:
 

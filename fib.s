@@ -6,9 +6,9 @@
 #     gcc fib.s
 # -----------------------------------------------------------------------------
 
-        .global main
+  .global main
 
-        .text
+  .text
 main:
   push    %rbx                    # we have to save this since we use it
 
@@ -16,6 +16,7 @@ main:
   xor     %rax, %rax              # rax will hold the current number
   xor     %rbx, %rbx              # rbx will hold the next number
   inc     %rbx                    # rbx is originally 1
+
 print:
   # We need to call printf, but we are using eax, ebx, and ecx.  printf
   # may destroy eax and ecx so we will save these before the call and
