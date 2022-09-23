@@ -12,7 +12,7 @@
 main:
   push %ebx                    # we have to save this since we use it
 
-  mov  $90, %ecx               # ecx will countdown to 0
+  mov  $3, %ecx               # ecx will countdown to 0
   xor  %eax, %eax              # eax will hold the current number
   xor  %ebx, %ebx              # ebx will hold the next number
   inc  %ebx                    # ebx is originally 1

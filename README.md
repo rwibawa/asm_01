@@ -175,9 +175,6 @@ $ ld -dynamic-linker \
 /usr/lib/x86_64-linux-gnu/crtn.o \
 -lc -o fib fib.o
 
-# Fibonacci 32-bit version
-$ as --32 -o fib32.o fib32.s
-
 $ ./fib
                    0
                    1
@@ -269,6 +266,46 @@ $ ./fib
   679891637638612258
  1100087778366101931
  1779979416004714189
+
+
+# install 32bit support files
+$ sudo apt install gcc-multilib
+$ gcc -v -m32 -fno-asynchronous-unwind-tables -o hello_world hello_world.c  |& grep 'collect2' | tr ' ' '\n'
+
+# Fibonacci 32-bit version
+$ as --32 -o fib32.o fib32.s
+$ ld -dynamic-linker \
+/lib32/ld-linux.so.2 \
+/usr/lib32/crt1.o \
+/usr/lib32/crti.o \
+/usr/lib32/crtn.o \
+-lc -o fib32 fib32.o
+
+$ gcc -m32 --enable-checking -g -O0 -o fib32 fib32.o
+$ ./fib32
+Segmentation fault
+$ gdb fib32
+(gdb) run
+Starting program: /home/ryan/workspace_asm/asm_01/fib32 
+
+Program received signal SIGSEGV, Segmentation fault.
+0xf7e4dcfb in strchrnul () from /lib32/libc.so.6
+(gdb) where
+#0  0xf7e4dcfb in strchrnul () from /lib32/libc.so.6
+#1  0xf7e2596a in ?? () from /lib32/libc.so.6
+#2  0xf7e14d59 in printf () from /lib32/libc.so.6
+#3  0x565561c8 in print () at fib32.s:33
+(gdb) list
+1       # -----------------------------------------------------------------------------
+2       # A 32-bit Linux application that writes the first 90 Fibonacci numbers.  It
+3       # needs to be linked with a C library.
+4       #
+5       # Assemble and Link:
+6       #     gcc fib.s
+7       # -----------------------------------------------------------------------------
+8
+9         .global main
+10
 ```
 
 ### Mixing C and Assembly Language
