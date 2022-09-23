@@ -282,6 +282,7 @@ $ ld -dynamic-linker \
 -lc -o fib32 fib32.o
 
 $ gcc -m32 --enable-checking -g -O0 -o fib32 fib32.o
+$ gcc -m32 --enable-checking -g -O0 -v -da -Q -o fib32 fib32.o
 $ ./fib32
 Segmentation fault
 $ gdb fib32
@@ -349,6 +350,9 @@ $$
 ```
 
 #### Debugging with `gdb`
+
+* [Debugging IA32 Assembly Code
+with gdb (and ddd)](https://www.cs.swarthmore.edu/~newhall/cs31/resources/ia32_gdb.php)
 
 ![gdb](./img/gdb01.jpg)
 
