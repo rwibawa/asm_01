@@ -311,6 +311,342 @@ huh
 $$
 ```
 
+#### Debugging with `gdb`
+
+![gdb](./img/gdb01.jpg)
+
+```sh
+# -g to add debugger symbols
+$ gcc -g -o echo echo.s
+$ gdb
+# load file ./echo
+(gdb) file echo
+Reading symbols from echo...
+
+# put a breakpoint at 'main'
+(gdb) break main
+Breakpoint 1 at 0x1139: file echo.s, line 12.
+(gdb) run 123 'QQ' 45
+Starting program: /home/ryan/workspace_asm/asm_01/echo 123 'QQ' 45
+
+Breakpoint 1, main () at echo.s:12
+12        push    %rdi                    # save registers that puts uses
+(gdb) disass main
+Dump of assembler code for function main:
+=> 0x0000555555555139 <+0>:     push   %rdi
+   0x000055555555513a <+1>:     push   %rsi
+   0x000055555555513b <+2>:     sub    $0x8,%rsp
+   0x000055555555513f <+6>:     mov    (%rsi),%rdi
+   0x0000555555555142 <+9>:     callq  0x555555555030 <puts@plt>
+   0x0000555555555147 <+14>:    add    $0x8,%rsp
+   0x000055555555514b <+18>:    pop    %rsi
+   0x000055555555514c <+19>:    pop    %rdi
+   0x000055555555514d <+20>:    add    $0x8,%rsi
+   0x0000555555555151 <+24>:    dec    %rdi
+   0x0000555555555154 <+27>:    jne    0x555555555139 <main>
+   0x0000555555555156 <+29>:    retq   
+--Type <RET> for more, q to quit, c to continue without paging--c
+End of assembler dump.
+(gdb) step
+main () at echo.s:13
+13        push    %rsi
+
+# ni = next instruction
+(gdb) ni
+main () at echo.s:14
+14        sub     $8, %rsp                # must align stack before call
+(gdb) print $rsp
+$1 = (void *) 0x7fffffffda08
+(gdb) break 17
+Breakpoint 2 at 0x555555555142: file echo.s, line 17.
+(gdb) cont
+Continuing.
+
+Breakpoint 2, main () at echo.s:17
+17        call    puts                    # print it
+(gdb) ni
+/home/ryan/workspace_asm/asm_01/echo
+19        add     $8, %rsp                # restore %rsp to pre-aligned value
+(gdb) break 23
+Breakpoint 3 at 0x55555555514d: file echo.s, line 23.
+(gdb) next
+main () at echo.s:20
+20        pop     %rsi                    # restore registers puts used
+(gdb) ni
+main () at echo.s:21
+21        pop     %rdi
+
+# step into a function call (step instruction)
+(gdb) si
+
+Breakpoint 3, main () at echo.s:23
+23        add     $8, %rsi                # point to next argument
+(gdb) display $rsi
+1: $rsi = 140737488345864
+(gdb) break *0x555555555154
+Breakpoint 4 at 0x555555555154: file echo.s, line 25.
+(gdb) si
+24        dec     %rdi                    # count down
+1: $rsi = 140737488345872
+(gdb) ni
+
+Breakpoint 4, main () at echo.s:25
+25        jnz     main                    # if not done counting keep going
+1: $rsi = 140737488345872
+(gdb) si
+
+Breakpoint 1, main () at echo.s:12
+12        push    %rdi                    # save registers that puts uses
+1: $rsi = 140737488345872
+(gdb) ni
+main () at echo.s:13
+13        push    %rsi
+1: $rsi = 140737488345872
+(gdb) si
+main () at echo.s:14
+14        sub     $8, %rsp                # must align stack before call
+1: $rsi = 140737488345872
+
+# show register values
+(gdb) info registers
+rax            0x25                37
+rbx            0x555555555160      93824992235872
+rcx            0x7ffff7ecd077      140737352880247
+rdx            0x0                 0
+rsi            0x5555555592a0      93824992252576
+rdi            0x7ffff7fad7e0      140737353799648
+rbp            0x0                 0x0
+rsp            0x7fffffffda00      0x7fffffffda00
+r8             0x25                37
+r9             0x7c                124
+r10            0x7ffff7fabbe0      140737353792480
+r11            0x246               582
+r12            0x555555555050      93824992235600
+r13            0x7fffffffdb00      140737488345856
+r14            0x0                 0
+r15            0x0                 0
+rip            0x555555555147      0x555555555147 <main+14>
+eflags         0x246               [ PF ZF IF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+--Type <RET> for more, q to quit, c to continue without paging--c
+
+(gdb) disass
+Dump of assembler code for function main:
+   0x0000555555555139 <+0>:     push   %rdi
+   0x000055555555513a <+1>:     push   %rsi
+   0x000055555555513b <+2>:     sub    $0x8,%rsp
+   0x000055555555513f <+6>:     mov    (%rsi),%rdi
+   0x0000555555555142 <+9>:     callq  0x555555555030 <puts@plt>
+=> 0x0000555555555147 <+14>:    add    $0x8,%rsp
+   0x000055555555514b <+18>:    pop    %rsi
+   0x000055555555514c <+19>:    pop    %rdi
+   0x000055555555514d <+20>:    add    $0x8,%rsi
+   0x0000555555555151 <+24>:    dec    %rdi
+   0x0000555555555154 <+27>:    jne    0x555555555139 <main>
+   0x0000555555555156 <+29>:    retq   
+End of assembler dump.
+(gdb) break *0x000055555555514d
+Breakpoint 3 at 0x55555555514d: file echo.s, line 23.
+(gdb) cont
+Continuing.
+
+Breakpoint 3, main () at echo.s:23
+23        add     $8, %rsi                # point to next argument
+(gdb) p $rsi
+$2 = 140737488345864
+(gdb) display $rsi
+1: $rsi = 140737488345864
+
+(gdb) ni
+24        dec     %rdi                    # count down
+1: $rsi = 140737488345872
+(gdb) p $rdi
+$3 = 4
+(gdb) ni
+25        jnz     main                    # if not done counting keep going
+1: $rsi = 140737488345872
+(gdb) ni
+
+Breakpoint 1, main () at echo.s:12
+12        push    %rdi                    # save registers that puts uses
+1: $rsi = 140737488345872
+(gdb) cont
+Continuing.
+
+Breakpoint 2, main () at echo.s:17
+17        call    puts                    # print it
+1: $rsi = 140737488345872
+(gdb) disass
+Dump of assembler code for function main:
+   0x0000555555555139 <+0>:     push   %rdi
+   0x000055555555513a <+1>:     push   %rsi
+   0x000055555555513b <+2>:     sub    $0x8,%rsp
+   0x000055555555513f <+6>:     mov    (%rsi),%rdi
+=> 0x0000555555555142 <+9>:     callq  0x555555555030 <puts@plt>
+   0x0000555555555147 <+14>:    add    $0x8,%rsp
+   0x000055555555514b <+18>:    pop    %rsi
+   0x000055555555514c <+19>:    pop    %rdi
+   0x000055555555514d <+20>:    add    $0x8,%rsi
+   0x0000555555555151 <+24>:    dec    %rdi
+   0x0000555555555154 <+27>:    jne    0x555555555139 <main>
+   0x0000555555555156 <+29>:    retq   
+End of assembler dump.
+(gdb) p *(int *)($rsi)
+$4 = -8736
+(gdb) p ($rsi)
+$5 = 140737488345872
+(gdb) display ($rsi)
+2: ($rsi) = 140737488345872
+(gdb) p (char *)($rsi)
+$6 = 0x7fffffffdb10 "\340\335\377\377\377\177"
+(gdb) cont
+Continuing.
+123
+
+Breakpoint 3, main () at echo.s:23
+23        add     $8, %rsi                # point to next argument
+1: $rsi = 140737488345872
+2: ($rsi) = 140737488345872
+(gdb) display $rdi
+3: $rdi = 3
+(gdb) cont
+Continuing.
+
+Breakpoint 1, main () at echo.s:12
+12        push    %rdi                    # save registers that puts uses
+1: $rsi = 140737488345880
+2: ($rsi) = 140737488345880
+3: $rdi = 2
+(gdb) p (char *)($rsi)
+$7 = 0x7fffffffdb18 "\344\335\377\377\377\177"
+(gdb) cont
+Continuing.
+
+Breakpoint 2, main () at echo.s:17
+17        call    puts                    # print it
+1: $rsi = 140737488345880
+2: ($rsi) = 140737488345880
+3: $rdi = 140737488346596
+(gdb) p (char *)($rsi)
+$8 = 0x7fffffffdb18 "\344\335\377\377\377\177"
+(gdb) cont
+Continuing.
+QQ
+
+Breakpoint 3, main () at echo.s:23
+23        add     $8, %rsi                # point to next argument
+1: $rsi = 140737488345880
+2: ($rsi) = 140737488345880
+3: $rdi = 2
+(gdb) cont
+Continuing.
+
+Breakpoint 1, main () at echo.s:12
+12        push    %rdi                    # save registers that puts uses
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 1
+(gdb) ni
+main () at echo.s:13
+13        push    %rsi
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 1
+(gdb) ni
+main () at echo.s:14
+14        sub     $8, %rsp                # must align stack before call
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 1
+(gdb) ni
+main () at echo.s:16
+16        mov     (%rsi), %rdi            # the argument string to display
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 1
+(gdb) p (char *)($rsp)
+$9 = 0x7fffffffda00 ""
+(gdb) cont
+Continuing.
+
+Breakpoint 2, main () at echo.s:17
+17        call    puts                    # print it
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 140737488346599
+(gdb) cont
+Continuing.
+45
+
+Breakpoint 3, main () at echo.s:23
+23        add     $8, %rsi                # point to next argument
+1: $rsi = 140737488345888
+2: ($rsi) = 140737488345888
+3: $rdi = 1
+(gdb) cont
+Continuing.
+[Inferior 1 (process 20714) exited with code 03]
+
+# to force quit
+(gdb) quit
+A debugging session is active.
+
+        Inferior 1 [process 18573] will be killed.
+
+Quit anyway? (y or n) y
+```
+
+#### `gdb` summary
+```sh
+(gdb) break main
+  (gdb) run  6              # run with the command line argument 6
+  (gdb) disass main         # disassemble the main function
+  (gdb) break sum           # set a break point at the beginning of a function
+  (gdb) cont                # continue execution of the program
+  (gdb) break *0x0804851a   # set a break point at memory address 0x0804851a
+  (gdb) ni                  # execute the next instruction
+  (gdb) si                  # step into a function call (step instruction)
+  (gdb) info registers      # list the register contents
+  (gdb) p $eax              # print the value stored in register %eax
+  (gdb) p  *(int *)($ebp+8) # print out value of an int at addr (%ebp+8)
+  (gdb) x/wd $ebp+8         # examine the contents of memory at the given address
+                            # as an int (w: word-size value d: in decimal) 
+                            # display type in x is sticky: subsequent x commands
+                            # will display values in decimal until another type is
+                            # specified (ex. x/a $ebp+8  # as an address in hex)
+  (gdb) x/s 0x0800004       # examine contents of memory at address as a string
+  (gdb) x/wd 0xff5634       # after x/s, the unit size is 1 byte, so if want
+                            # to examine as an int specify both the width w and d
+
+# breakpoint with a condition
+(gdb) break file1.c:6 if i >= ARRAYSIZE
+
+# See the value (memory address) of the pointer:
+(gdb) print e1
+
+# See a particular field of the struct the pointer is referencing:
+(gdb) print e1->key
+(gdb) print e1->name
+(gdb) print e1->price
+(gdb) print e1->serial number
+
+# Using pointers with gdb II
+#You can also use the dereference (*) and dot (.) operators in place of the arrow operator (->):
+(gdb) print (*e1).key
+(gdb) print (*e1).name
+(gdb) print (*e1).price
+(gdb) print (*e1).serial number
+
+# See the entire contents of the struct the pointer references (you can’t do this as easily in C!):
+(gdb) print *e1
+
+# You can also follow pointers iteratively, like in a linked list:
+(gdb) print list prt->next->next->next->data
+
+```
+
 ## Calling Conventions for 64-bit C Code
 
 * [X86 Disassembly/Calling Conventions](https://en.wikibooks.org/wiki/X86_Disassembly/Calling_Conventions)
